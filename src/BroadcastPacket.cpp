@@ -58,8 +58,11 @@ char* BroadcastPacket::serialize() {
 	dst++;
 	for(vector<unsigned int>::iterator iter = relayIPs.begin(); iter != relayIPs.end(); iter++) {
 		unsigned int ip = * iter;
-		memcpy(dst, &ip, sizeof(unsigned int));
-		dst += sizeof(unsigned int);
+		int masks[4] = {0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff};
+		for(int i = 0; i < 4; i++) {
+			*dst++ = (char)((ip & masks[i]) >> (8 * (3-i)));
+			//ip = ip >> 8;
+		}
 	}
 	const char* str = message.c_str();
 	int len = strlen(str);
@@ -69,6 +72,11 @@ char* BroadcastPacket::serialize() {
 	return bytes;
 }
 
+void SwapEndian(int &val)
+{
+    val = (val<<24) | ((val<<8) & 0x00ff0000) |
+          ((val>>8) & 0x0000ff00) | (val>>24);
+}
 void BroadcastPacket::deserialize(char* serialization) {
 	//assert header is correct.
 	if(serialization[0] != -32 || serialization[1] != -31 || serialization[2] != -30) {
@@ -84,6 +92,7 @@ void BroadcastPacket::deserialize(char* serialization) {
 	int* ipSegs = (int*)(serialization + 4);
 	for(int i = 0; i < ipCount; i++) {
 		int ip = ipSegs[i];
+		SwapEndian(ip);
 		relayIPs.push_back(ip);
 	}
 	char* strMsg = serialization + 4 + 4 * ipCount;

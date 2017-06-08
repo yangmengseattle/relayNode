@@ -143,9 +143,9 @@ void UdpRelay::handleTcpRequest(int clntSocket)
         BroadcastPacket receivedPacket(echoBuffer);
     	if (!receivedPacket.containsIp(localhostIP)) {
     		//receivedPacket.addIp(localhostIP);
-    		char* serialized = receivedPacket.serialize();
-    		memcpy (echoBuffer, serialized, receivedPacket.getLengthInBytes());
-    		delete serialized;
+//    		char* serialized = receivedPacket.serialize();
+//    		memcpy (echoBuffer, serialized, receivedPacket.getLengthInBytes());
+//    		delete serialized;
 
     		thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
     		relayOutThread.join();
