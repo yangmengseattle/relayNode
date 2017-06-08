@@ -135,6 +135,7 @@ void UdpRelay::handleTcpRequest(int clntSocket)
 
     while ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
     	// thread relayOutThread( [this] { relayOutRunnable(echoBuffer); }, echoBuffer);
+    	echoBuffer[recvMsgSize] = '\0';
 
         cout << "in handleTcpRequest, received " << recvMsgSize << "bytes, they are:" << endl;
         printHex(echoBuffer);
@@ -183,6 +184,7 @@ void UdpRelay::relayInRunnable () {
     while (true) {
         int lengthReceived = ptrUdpMulticast->recv(echoBuffer, RCVBUFSIZE);
 
+        echoBuffer[lengthReceived] = '\0';
         cout << "in relayInRunnable, received " << lengthReceived << "bytes, they are:" << endl;
         printHex(echoBuffer);
 
@@ -200,6 +202,7 @@ void UdpRelay::relayInRunnable () {
         	}
     	} else {
     		// the localhost IP is contained in the UDP header, then just ignore it.
+    		cout << "HOORAY!! I GOT A MESSAGE WITH MY IP IN THE HEADER !!" << endl;
     	}
     }
 }
