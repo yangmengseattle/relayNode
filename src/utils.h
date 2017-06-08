@@ -12,7 +12,7 @@
 #include <vector>
 using namespace std;
 
-vector<string> getLocalIpAddress();
+string getLocalIpAddress();
 vector<string> split(const string& text, const string& delims);
 
 

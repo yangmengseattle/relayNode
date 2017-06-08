@@ -25,14 +25,12 @@
 
 
 
-vector<string> getLocalIpAddress() {
+string getLocalIpAddress() {
 	struct ifaddrs * ifAddrStruct=NULL;
 	struct ifaddrs * ifa=NULL;
 	void * tmpAddrPtr=NULL;
 
 	getifaddrs(&ifAddrStruct);
-
-	vector<string> result;
 
 	for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
 		if (!ifa->ifa_addr) {
@@ -43,16 +41,18 @@ vector<string> getLocalIpAddress() {
 			char mask[INET_ADDRSTRLEN];
 			void* mask_ptr = &((struct sockaddr_in*) ifa->ifa_netmask)->sin_addr;
 			inet_ntop(AF_INET, mask_ptr, mask, INET_ADDRSTRLEN);
-			//printf("mask:%s\n", mask);
-			// Is a valid IPv4 Address
-			tmpAddrPtr = &((struct sockaddr_in *) ifa->ifa_addr)->sin_addr;
-			char addressBuffer[INET_ADDRSTRLEN];
-			inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
-			//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);
-			result.push_back(addressBuffer);
+			if (strcmp(mask, "255.255.255.0") == 0) {
+				//printf("mask:%s\n", mask);
+				// Is a valid IPv4 Address
+				tmpAddrPtr = &((struct sockaddr_in *) ifa->ifa_addr)->sin_addr;
+				char addressBuffer[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+				//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);
+				return addressBuffer;
+			}
 		}
 	}
-	return result;
+	return NULL;
 }
 
 vector<string> split(const string& text, const string& delims)

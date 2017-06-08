@@ -40,18 +40,26 @@ void handleTcpRequest(int);
 
 
 UdpRelay::UdpRelay (char* arg)
-	   : serverSocket(TCP_PORT) {
+	   : serverSocket(TCP_PORT), ptrUdpMulticast(NULL) {
 	string strArg(arg);
 	vector<string> ipAndPort = split(strArg, ":");
-	networkSegment = ipAndPort.at(0);
-	udpPort = ipAndPort.at(1);
-	cout << "network segment: " << networkSegment << " , port : " << udpPort <<endl;
+	groupIP = ipAndPort.at(0);
+	groupUdpPort = stoi(ipAndPort.at(1));
+	localhostIP = getLocalIpAddress();
+	cout << "network segment: " << groupIP << " , port : " << groupUdpPort <<endl;
+	ptrUdpMulticast = new UdpMulticast(const_cast<char*>(groupIP.c_str()), groupUdpPort);
+
 	thread commandThread([this] { commandRunnable(); });
 	thread acceptThread([this] { acceptRunnable(); });
 	thread relayInThread( [this] { relayInRunnable(); });
 	commandThread.join();
 }
 
+UdpRelay::~UdpRelay() {
+	if(ptrUdpMulticast != NULL) {
+		delete ptrUdpMulticast;
+	}
+}
 
 void UdpRelay::commandRunnable () {
 	string commandLine = "";
@@ -110,6 +118,7 @@ void UdpRelay::acceptRunnable () {
 			perror( "Cannot accept from another host." );
 			exit(1);
 		}
+
 		handleTcpRequest(clientConnection);
 	}
 }
@@ -122,19 +131,9 @@ void UdpRelay::handleTcpRequest(int clntSocket)
     char echoBuffer[RCVBUFSIZE];        //* Buffer for echo string
     int recvMsgSize;                    //* Size of received message
 
-    while ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0)      //* zero indicates end of transmission
-    {
-    	// deserialize to get a BroadcastPacket
-    	// if the packet contain this IP address, then discard the packet.
-    	// otherwise, spawn a thread to send to relay nodes.
-    	BroadcastPacket receivedPacket(echoBuffer);
-    	if (receivedPacket.containsIp(networkSegment)) {
-    		return;
-    	} else {
-    		receivedPacket.addIp(networkSegment);
-    	}
-    	// this host didn't received this packet before. so spawn a thread and send the packet to relay nodes.
-    	thread relayOutThread( [this] { relayOutRunnable(receivedPacket); });
+    if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
+    	// thread relayOutThread( [this] { relayOutRunnable(echoBuffer); }, echoBuffer);
+    	thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
     }
 }
 
@@ -147,7 +146,7 @@ void UdpRelay::addRelayNode (string ipAddr, int port) {
 	deleteConnection(ipAddr);
 
 	IpPortPair ipPort(ipAddr, port);
-	char* cstr = new char[ipAddr.length() +1];
+	char* cstr = new char[ipAddr.length() + 1];
 	strcpy(cstr, ipAddr.c_str());
 	ipPort.connectionFd = serverSocket.getClientSocket(cstr);
 	delete[] cstr;
@@ -170,28 +169,32 @@ void UdpRelay::deleteConnection (string ip) {
 }
 
 
-void sendUdp (string ipAddr, int port, string message) {
-
-
-}
-
-
-
 void UdpRelay::relayInRunnable () {
-	//UdpMulticast
+	int serverFd = ptrUdpMulticast->getServerSocket();
+	int clientFd = ptrUdpMulticast->getClientSocket();
+    char echoBuffer[RCVBUFSIZE];
+    while (true) {
+        int lengthReceived = ptrUdpMulticast->recv(echoBuffer, RCVBUFSIZE);
 
+    	// deserialize to get a BroadcastPacket
+    	// if the packet contain this IP address, then discard the packet.
+    	// otherwise, spawn a thread to send to relay nodes.
+    	BroadcastPacket receivedPacket(echoBuffer);
+    	if (!receivedPacket.containsIp(localhostIP)) {
+    		receivedPacket.addIp(localhostIP);
+        	for (vector<IpPortPair>::iterator iter = relayNodes.begin(); iter != relayNodes.end(); iter++) {
+        		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, echoBuffer, lengthReceived, 0) != lengthReceived) {
+        			cerr << "send() failed to " << iter->ipAddr << ":" << iter->port << endl;
+        		    //exit(1);
+        		}
+        	}
+    	} else {
+    		// the localhost IP is contained in the UDP header, then just ignore it.
+    	}
+    }
 }
 
-void UdpRelay::relayOutRunnable (BroadcastPacket packet) {
-	char* serialized = packet.serialize();
-	int len = packet.getLengthInBytes();
-	for (vector<IpPortPair>::iterator iter = relayNodes.begin(); iter != relayNodes.end(); iter++) {
-		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, serialized, len, 0) != len) {
-			perror("send() failed");
-			delete serialized;
-		    exit(1);
-		}
-	}
-	delete serialized;
+void UdpRelay::relayOutRunnable (char* msg) {
+	ptrUdpMulticast->multicast(msg);
 }
 

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "IpAddress.h"
+#include "utils.h"
 #include "BroadcastPacket.h"
 using namespace std;
 
@@ -54,6 +55,11 @@ int main( int argc, char *argv[] ) {
 		IpAddress ipAddr(*iter);
 		cout << ipAddr.toString() << endl;
 	}
+
+	cout << "----------------------------------------" << endl << endl;
+
+	string ipAddresses = getLocalIpAddress();
+	cout << "IP address : " << ipAddresses << endl;
 
 
     return 0;

@@ -20,7 +20,7 @@ class UdpMulticast {
   int getClientSocket( );
   bool multicast( char buf[] );
   int getServerSocket( );
-  bool recv( char buf[], int size );
+  int recv( char buf[], int size );
  private:
   int clientSd;
   int serverSd;

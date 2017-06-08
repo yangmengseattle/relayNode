@@ -16,6 +16,8 @@
 #include "IpPortPair.h"
 #include "Socket.h"
 #include "BroadcastPacket.h"
+#include "UdpMulticast.h"
+
 #include <string>
 #include <vector>
 using namespace std;
@@ -25,21 +27,24 @@ static int TCP_PORT = 73978;
 class UdpRelay{
 public:
 	UdpRelay (char* arg);
+	virtual ~UdpRelay();
 
 private:
 	void commandRunnable ();
 	void acceptRunnable ();
 	void relayInRunnable ();
-	void relayOutRunnable (BroadcastPacket packet);
+	void relayOutRunnable (char*);
 
 	void addRelayNode(string, int);
 	void deleteConnection (string);
 	void handleTcpRequest(int);
 
-	string networkSegment;
-	string udpPort;
+	string localhostIP;
+	string groupIP;
+	int    groupUdpPort;
 	vector<IpPortPair> relayNodes;
 
+	UdpMulticast* ptrUdpMulticast;
 	Socket serverSocket;
 };
 

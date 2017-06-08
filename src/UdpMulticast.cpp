@@ -1,4 +1,6 @@
 #include "UdpMulticast.h"
+#include <string.h>
+#include <unistd.h>
 
 UdpMulticast::UdpMulticast( char group[], int port ) : port( port ), clientSd( NULL_SD ), serverSd( NULL_SD ) {
   strncpy( this->group, group, BUFSIZE );
@@ -68,15 +70,16 @@ int UdpMulticast::getServerSocket( ) {
   return serverSd;
 }
 
-bool UdpMulticast::recv( char buf[], int size ) {
+int UdpMulticast::recv( char buf[], int size ) {
   bzero( buf, size );
   struct sockaddr src_addr;
   socklen_t src_addrlen = sizeof( src_addr );
   bzero( (char *)&src_addr, src_addrlen );
-  if ( recvfrom( serverSd, buf, size, 0, &src_addr, &src_addrlen ) < 0 ) {
+  int len = 0;
+  if ( (len = recvfrom( serverSd, buf, size, 0, &src_addr, &src_addrlen )) < 0 ) {
     perror( "recvfrom" );
-    return false;
+    return 0;
   }
-  return true;
+  return len;
 }
 
