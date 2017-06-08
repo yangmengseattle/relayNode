@@ -138,6 +138,7 @@ void UdpRelay::handleTcpRequest(int clntSocket)
         printHex(echoBuffer);
 
     	thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
+    	relayOutThread.join();
     }
 }
 
