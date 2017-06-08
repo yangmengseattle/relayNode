@@ -133,6 +133,10 @@ void UdpRelay::handleTcpRequest(int clntSocket)
 
     if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
     	// thread relayOutThread( [this] { relayOutRunnable(echoBuffer); }, echoBuffer);
+
+        cout << "in handleTcpRequest, received " << recvMsgSize << "bytes, they are:" << endl;
+        printHex(echoBuffer);
+
     	thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
     }
 }
@@ -176,7 +180,10 @@ void UdpRelay::relayInRunnable () {
     while (true) {
         int lengthReceived = ptrUdpMulticast->recv(echoBuffer, RCVBUFSIZE);
 
-    	// deserialize to get a BroadcastPacket
+        cout << "in relayInRunnable, received " << lengthReceived << "bytes, they are:" << endl;
+        printHex(echoBuffer);
+
+        // deserialize to get a BroadcastPacket
     	// if the packet contain this IP address, then discard the packet.
     	// otherwise, spawn a thread to send to relay nodes.
     	BroadcastPacket receivedPacket(echoBuffer);

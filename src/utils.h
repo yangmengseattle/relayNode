@@ -14,6 +14,6 @@ using namespace std;
 
 string getLocalIpAddress();
 vector<string> split(const string& text, const string& delims);
-
+void printHex(char* arr);
 
 #endif /* UTILS_H_ */

@@ -22,7 +22,7 @@
 #include <vector>
 using namespace std;
 
-static int TCP_PORT = 73978;
+static int TCP_PORT = 23978;
 
 class UdpRelay{
 public:

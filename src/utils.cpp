@@ -70,5 +70,13 @@ vector<string> split(const string& text, const string& delims)
 	}
 
 	return tokens;
-		}
+}
 
+
+void printHex(char* arr) {
+	int len = strlen(arr);
+	for(int i = 0; i < len; i++) {
+		cout << hex << arr[i] << "  ";
+	}
+	cout << endl;
+}
