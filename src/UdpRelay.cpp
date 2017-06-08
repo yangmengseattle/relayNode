@@ -205,8 +205,13 @@ void UdpRelay::relayInRunnable () {
     	BroadcastPacket receivedPacket(echoBuffer);
     	if (!receivedPacket.containsIp(localhostIP)) {
     		receivedPacket.addIp(localhostIP);
+    		char* serialized = receivedPacket.serialize();
+    		int newLen = receivedPacket.getLengthInBytes();
+    		memcpy (echoBuffer, serialized, newLen);
+    		delete serialized;
+
         	for (vector<IpPortPair>::iterator iter = relayNodes.begin(); iter != relayNodes.end(); iter++) {
-        		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, echoBuffer, lengthReceived, 0) != lengthReceived) {
+        		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, echoBuffer, newLen, 0) != newLen) {
         			cout << "send() failed to " << iter->ipAddr << ":" << iter->port << endl;
         		    //exit(1);
         		}
