@@ -115,8 +115,8 @@ void UdpRelay::acceptRunnable () {
 		socklen_t newSockAddrSize = sizeof( newSockAddr );
 
 		if ((clientConnection = accept(serverSocketFd, (sockaddr*)&newSockAddr, &newSockAddrSize)) < 0) {
-			perror( "Cannot accept from another host." );
-			exit(1);
+			cout << "Cannot accept from another host." <<endl;
+			//exit(1);
 		}
 
 		handleTcpRequest(clientConnection);
@@ -191,7 +191,7 @@ void UdpRelay::relayInRunnable () {
     		receivedPacket.addIp(localhostIP);
         	for (vector<IpPortPair>::iterator iter = relayNodes.begin(); iter != relayNodes.end(); iter++) {
         		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, echoBuffer, lengthReceived, 0) != lengthReceived) {
-        			cerr << "send() failed to " << iter->ipAddr << ":" << iter->port << endl;
+        			cout << "send() failed to " << iter->ipAddr << ":" << iter->port << endl;
         		    //exit(1);
         		}
         	}

@@ -36,7 +36,7 @@ void tcp( int serverSd ) {
     if ( ( newSd = accept( serverSd, (struct sockaddr*)&newSockAddr, 
 			   &newSockAddrSize ) ) < 0 ) {
       perror( "Cannot accept from another host." );
-      exit( -1 );
+      //exit( -1 );
     }
     char buf[256];
     int nRead = 0;

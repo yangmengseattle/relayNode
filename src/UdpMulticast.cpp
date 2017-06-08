@@ -43,7 +43,7 @@ int UdpMulticast::getServerSocket( ) {
   // create what looks like an ordinary UDP socket
   if ( ( serverSd = socket( AF_INET, SOCK_DGRAM, 0 ) ) < 0 ) {
     perror( "socket" );
-    exit( NULL_SD );
+    //exit( NULL_SD );
   }
   // set up destination address
   struct sockaddr_in addr;
