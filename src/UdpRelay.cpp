@@ -109,6 +109,7 @@ void UdpRelay::acceptRunnable () {
 
 	int serverSocketFd = serverSocket.getServerSocket();
 	while (true) {
+		cout << "before accept:" << endl;
 		// Read to accept new requests
 		int clientConnection = NULL_FD;
 		sockaddr_in newSockAddr;
@@ -120,6 +121,7 @@ void UdpRelay::acceptRunnable () {
 		}
 
 		handleTcpRequest(clientConnection);
+		cout << "after handleTcpRequest" << endl;
 	}
 }
 
