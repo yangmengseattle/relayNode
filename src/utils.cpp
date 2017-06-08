@@ -76,7 +76,7 @@ vector<string> split(const string& text, const string& delims)
 void printHex(char* arr) {
 	int len = strlen(arr);
 	for(int i = 0; i < len; i++) {
-		cout << hex << arr[i] << "  ";
+		cout << hex << (int)arr[i] << "  ";
 	}
 	cout << endl;
 }
