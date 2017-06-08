@@ -140,6 +140,17 @@ void UdpRelay::handleTcpRequest(int clntSocket)
         cout << "in handleTcpRequest, received " << recvMsgSize << "bytes, they are:" << endl;
         printHex(echoBuffer);
 
+        BroadcastPacket receivedPacket(echoBuffer);
+    	if (!receivedPacket.containsIp(localhostIP)) {
+    		receivedPacket.addIp(localhostIP);
+    		char* serialized = receivedPacket.serialize();
+    		memcpy (echoBuffer, serialized, receivedPacket.getLengthInBytes()));
+    		delete serialized;
+    	} else {
+    	    // the localhost IP is contained in the UDP header, then just ignore it.
+    	    cout << "HOORAY!! handleTcpRequest !! I GOT A MESSAGE WITH MY IP IN THE HEADER !!" << endl;
+    	}
+
     	thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
     	relayOutThread.join();
     }
