@@ -133,7 +133,7 @@ void UdpRelay::handleTcpRequest(int clntSocket)
     char echoBuffer[RCVBUFSIZE];        //* Buffer for echo string
     int recvMsgSize;                    //* Size of received message
 
-    if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
+    while ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
     	// thread relayOutThread( [this] { relayOutRunnable(echoBuffer); }, echoBuffer);
 
         cout << "in handleTcpRequest, received " << recvMsgSize << "bytes, they are:" << endl;
