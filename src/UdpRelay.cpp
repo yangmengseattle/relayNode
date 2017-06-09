@@ -66,8 +66,6 @@ UdpRelay::~UdpRelay() {
  */
 void UdpRelay::commandRunnable () {
 	string commandLine = "";
-	string addCommand = "add";
-	string deleteCommand = "delete";
 	while (true) {
 		cin >> commandLine;
 		cout << "command line: " << commandLine << endl;
@@ -90,11 +88,14 @@ void UdpRelay::commandRunnable () {
 			string ip = "";
 			cin >> ip;
 			deleteConnection(ip);
+			cout << "UdpRelay: deleted " << ip << endl;
 		} else if (commandLine.compare("add") == 0) {
 			string ipPort = "";
 			cin >> ipPort;
 			vector<string> l2_split = split(ipPort, ":");
+			cout << "UdpRelay: registered " << l2_split.at(0) << endl;
 			addRelayNode(l2_split.at(0), stoi(l2_split.at(1), nullptr, 0));
+			cout << "UdpRelay: added " << ipPort << endl;
 		} else {
 			cout << "unsupported command \"" << commandLine << "\"" << endl;
 		}
@@ -131,9 +132,9 @@ void UdpRelay::handleTcpRequest(int clntSocket)
     int recvMsgSize;                    //* Size of received message
 
     while ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
-    	cout << "in handleTcpRequest, received " << dec << recvMsgSize << "bytes, they are:" << endl;
     	echoBuffer[recvMsgSize] = '\0';
     	BroadcastPacket receivedPacket(echoBuffer);
+    	cout << "UdpRelay: received " << dec << recvMsgSize << "bytes, message: " << echoBuffer << endl;
 
     	if (!receivedPacket.containsIp(localhostIP)) {
     		thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
@@ -178,6 +179,7 @@ void UdpRelay::deleteConnection (string ip) {
 
 /**
  * the method to run in relayInThread.
+ * receiving UDP broadcast.
  */
 void UdpRelay::relayInRunnable () {
 	int serverFd = ptrUdpMulticast->getServerSocket();
@@ -187,8 +189,7 @@ void UdpRelay::relayInRunnable () {
         int lengthReceived = ptrUdpMulticast->recv(echoBuffer, RCVBUFSIZE);
 
         echoBuffer[lengthReceived] = '\0';
-        cout << "in relayInRunnable, received " << lengthReceived << "bytes, they are:" << endl;
-        printHex(echoBuffer);
+        cout << "UdpRelay: received " << lengthReceived << " bytes, msg : " << echoBuffer << endl;
 
         // deserialize to get a BroadcastPacket
     	BroadcastPacket receivedPacket(echoBuffer);
@@ -205,6 +206,8 @@ void UdpRelay::relayInRunnable () {
         		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, echoBuffer, newLen, 0) != newLen) {
         			cout << "send() failed to " << iter->ipAddr << ":" << iter->port << endl;
         		    exit(1);
+        		} else {
+        			cout << "UdpRelay: relay '"  << receivedPacket.getMessage() << "' to remoteGroup [" << iter->ipAddr << ":" << iter->port << "]" << endl;
         		}
         	}
     	} else {
