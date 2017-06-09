@@ -16,9 +16,9 @@ public:
 	IpPortPair(string, int);
 	virtual ~IpPortPair();
 
-	string ipAddr;
-	int    port;
-	int    connectionFd;
+	string ipAddr;         // the IP address
+	int    port;           // the port nubmer
+	int    connectionFd;   // the FD of connection
 };
 
 #endif /* IPPORTPAIR_H_ */

@@ -22,6 +22,7 @@
 #include <vector>
 using namespace std;
 
+//* since my student ID is ending with 73978, and it exceeds the max port number 65535, so I used another port instead.
 static int TCP_PORT = 23978;
 
 class UdpRelay{

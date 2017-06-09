@@ -46,12 +46,12 @@ UdpRelay::UdpRelay (char* arg)
 	groupIP = ipAndPort.at(0);
 	groupUdpPort = stoi(ipAndPort.at(1));
 	localhostIP = getLocalIpAddress();
-	cout << "network segment: " << groupIP << " , port : " << groupUdpPort <<endl;
+	cout << "UdpRelay: booted up at " << groupIP << " , port : " << groupUdpPort <<endl;
 	ptrUdpMulticast = new UdpMulticast(const_cast<char*>(groupIP.c_str()), groupUdpPort);
 
-	thread commandThread([this] { commandRunnable(); });
-	thread acceptThread([this] { acceptRunnable(); });
-	thread relayInThread( [this] { relayInRunnable(); });
+	thread commandThread(&UdpRelay::commandRunnable, this);
+	thread acceptThread(&UdpRelay::acceptRunnable, this);
+	thread relayInThread(&UdpRelay::relayInRunnable, this);
 	commandThread.join();
 }
 
@@ -61,6 +61,9 @@ UdpRelay::~UdpRelay() {
 	}
 }
 
+/**
+ * the method to run in commandThread.
+ */
 void UdpRelay::commandRunnable () {
 	string commandLine = "";
 	string addCommand = "add";
@@ -98,18 +101,12 @@ void UdpRelay::commandRunnable () {
 	}
 }
 
-
+/**
+ * the method to run in acceptThread.
+ */
 void UdpRelay::acceptRunnable () {
-
-	// create  a socket object with a given TCP port (73978) and keeps accepting a TCP connection request from a remote UdpRelay
-	// check if another TCP connection has been already established to that remote node
-	//   if so, delete the former connection
-	//          start relayOutThread that keeps reading a UDP multicast message relayed thru this TCP connection from the remote
-	//          node and multicasting it to the local group.
-
 	int serverSocketFd = serverSocket.getServerSocket();
 	while (true) {
-		cout << "before accept:" << endl;
 		// Read to accept new requests
 		int clientConnection = NULL_FD;
 		sockaddr_in newSockAddr;
@@ -117,48 +114,38 @@ void UdpRelay::acceptRunnable () {
 
 		if ((clientConnection = accept(serverSocketFd, (sockaddr*)&newSockAddr, &newSockAddrSize)) < 0) {
 			cout << "Cannot accept from another host." <<endl;
-			//exit(1);
+			exit(1);
 		}
 
 		handleTcpRequest(clientConnection);
-		cout << "after handleTcpRequest" << endl;
 	}
 }
 
-
-
-
+/**
+ * receive messages from TCP connections, if localhost IP address is not listed in UDP header,
+ *  then spawn a relayOutThread to multicast to the group.
+ */
 void UdpRelay::handleTcpRequest(int clntSocket)
 {
     char echoBuffer[RCVBUFSIZE];        //* Buffer for echo string
     int recvMsgSize;                    //* Size of received message
 
     while ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
-    	// thread relayOutThread( [this] { relayOutRunnable(echoBuffer); }, echoBuffer);
+    	cout << "in handleTcpRequest, received " << dec << recvMsgSize << "bytes, they are:" << endl;
     	echoBuffer[recvMsgSize] = '\0';
+    	BroadcastPacket receivedPacket(echoBuffer);
 
-        cout << "in handleTcpRequest, received " << recvMsgSize << "bytes, they are:" << endl;
-        printHex(echoBuffer);
-
-        BroadcastPacket receivedPacket(echoBuffer);
     	if (!receivedPacket.containsIp(localhostIP)) {
-    		//receivedPacket.addIp(localhostIP);
-//    		char* serialized = receivedPacket.serialize();
-//    		memcpy (echoBuffer, serialized, receivedPacket.getLengthInBytes());
-//    		delete serialized;
-
     		thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
     		relayOutThread.join();
     	} else {
     	    // the localhost IP is contained in the UDP header, then just ignore it.
-    	    cout << "HOORAY!! handleTcpRequest !! I GOT A MESSAGE WITH MY IP IN THE HEADER !!" << endl;
     	}
     }
 }
 
 /**
- *
- * @return the connection FD to the IP & port.
+ * add a new host that relay UDP message to.
  */
 void UdpRelay::addRelayNode (string ipAddr, int port) {
 	cout << "addRelayNode (" << ipAddr << ", " << port << ")" << endl;
@@ -170,9 +157,11 @@ void UdpRelay::addRelayNode (string ipAddr, int port) {
 	ipPort.connectionFd = serverSocket.getClientSocket(cstr);
 	delete[] cstr;
 	relayNodes.push_back(ipPort);
-	cout<< "relayNodes.size: " << relayNodes.size() << endl;
 }
 
+/**
+ * delete the connections with specified IP
+ */
 void UdpRelay::deleteConnection (string ip) {
 	for (vector<IpPortPair>::iterator iter = relayNodes.begin(); iter != relayNodes.end(); ) {
 	    if (iter->ipAddr.compare(ip) == 0) {
@@ -187,7 +176,9 @@ void UdpRelay::deleteConnection (string ip) {
 	}
 }
 
-
+/**
+ * the method to run in relayInThread.
+ */
 void UdpRelay::relayInRunnable () {
 	int serverFd = ptrUdpMulticast->getServerSocket();
 	int clientFd = ptrUdpMulticast->getClientSocket();
@@ -200,10 +191,10 @@ void UdpRelay::relayInRunnable () {
         printHex(echoBuffer);
 
         // deserialize to get a BroadcastPacket
-    	// if the packet contain this IP address, then discard the packet.
-    	// otherwise, spawn a thread to send to relay nodes.
     	BroadcastPacket receivedPacket(echoBuffer);
+
     	if (!receivedPacket.containsIp(localhostIP)) {
+        	// UDP header doesn't contain this IP address, then add this IP to it and relay to other nodes.
     		receivedPacket.addIp(localhostIP);
     		char* serialized = receivedPacket.serialize();
     		int newLen = receivedPacket.getLengthInBytes();
@@ -213,16 +204,18 @@ void UdpRelay::relayInRunnable () {
         	for (vector<IpPortPair>::iterator iter = relayNodes.begin(); iter != relayNodes.end(); iter++) {
         		if (iter->connectionFd != NULL_FD && send(iter->connectionFd, echoBuffer, newLen, 0) != newLen) {
         			cout << "send() failed to " << iter->ipAddr << ":" << iter->port << endl;
-        		    //exit(1);
+        		    exit(1);
         		}
         	}
     	} else {
     		// the localhost IP is contained in the UDP header, then just ignore it.
-    		cout << "HOORAY!! I GOT A MESSAGE WITH MY IP IN THE HEADER !!" << endl;
     	}
     }
 }
 
+/**
+ * the method to run in relayOutThread.
+ */
 void UdpRelay::relayOutRunnable (char* msg) {
 	ptrUdpMulticast->multicast(msg);
 }

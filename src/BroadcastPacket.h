@@ -1,6 +1,6 @@
 /*
- * BroadcastPacket.h
- *
+ * BroadcastPacket is used to represent the message that are being broadcast.
+ * With the 'serialize' & 'deserialize' method, it could transform between byte array and C++ class with ease.
  *  Created on: Jun 6, 2017
  *      Author: qiuping
  */

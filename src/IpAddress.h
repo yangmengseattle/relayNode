@@ -1,5 +1,5 @@
 /*
- * IpAddress.h
+ * IpAddress, it's mainly wrapping some methods around an unsigned int.
  *
  *  Created on: Jun 6, 2017
  *      Author: qiuping

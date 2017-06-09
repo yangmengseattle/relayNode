@@ -24,7 +24,9 @@
 #include <unistd.h>
 
 
-
+/**
+ * get the IP address under the mask "255.255.255.0" of local host.
+ */
 string getLocalIpAddress() {
 	struct ifaddrs * ifAddrStruct=NULL;
 	struct ifaddrs * ifa=NULL;
@@ -42,12 +44,9 @@ string getLocalIpAddress() {
 			void* mask_ptr = &((struct sockaddr_in*) ifa->ifa_netmask)->sin_addr;
 			inet_ntop(AF_INET, mask_ptr, mask, INET_ADDRSTRLEN);
 			if (strcmp(mask, "255.255.255.0") == 0) {
-				//printf("mask:%s\n", mask);
-				// Is a valid IPv4 Address
 				tmpAddrPtr = &((struct sockaddr_in *) ifa->ifa_addr)->sin_addr;
 				char addressBuffer[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
-				//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);
 				return addressBuffer;
 			}
 		}
@@ -55,24 +54,32 @@ string getLocalIpAddress() {
 	return NULL;
 }
 
-vector<string> split(const string& text, const string& delims)
-		{
+/**
+ * split a string into segments with delimiters.
+ * @param text the input string
+ * @delims  the delimiters.
+ * @return a vector with strings after split.
+ */
+vector<string> split(const string& text, const string& delims) {
 	vector<string> tokens;
 	size_t start = text.find_first_not_of(delims), end = 0;
 
-	while((end = text.find_first_of(delims, start)) != string::npos)
-	{
+	while ((end = text.find_first_of(delims, start)) != string::npos) {
 		tokens.push_back(text.substr(start, end - start));
 		start = text.find_first_not_of(delims, end);
 	}
-	if(start != string::npos) {
+
+	if (start != string::npos) {
 		tokens.push_back(text.substr(start));
 	}
 
 	return tokens;
 }
 
-
+/**
+ * print a C string byte by byte in hexical.
+ * for debug convenience.
+ */
 void printHex(char* arr) {
 	int len = strlen(arr);
 	for(int i = 0; i < len; i++) {
@@ -80,3 +87,13 @@ void printHex(char* arr) {
 	}
 	cout << endl;
 }
+
+/**
+ * swap between big-endian and small-endian.
+ */
+unsigned int swapEndian(unsigned int val)
+{
+    return (val<<24) | ((val<<8) & 0x00ff0000) |
+          ((val>>8) & 0x0000ff00) | (val>>24);
+}
+

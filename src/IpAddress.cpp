@@ -18,6 +18,9 @@ IpAddress::IpAddress(string ipStr) {
 	readFrom(ipStr);
 }
 
+/**
+ * update with specified IP string
+ */
 void IpAddress::readFrom(string ipStr) {
 	ipInteger = 0;
 	vector<string> segs = split(ipStr, ".");
@@ -27,10 +30,16 @@ void IpAddress::readFrom(string ipStr) {
 	}
 }
 
-
+/**
+ * get an unsigned integer value of the IP address
+ */
 unsigned int IpAddress::toInteger() {
 	return ipInteger;
 }
+
+/**
+ * get the string representation of the IP address.
+ */
 string IpAddress::toString() {
 	string s = "";
 	for(int i = 0; i < 4; i++) {
@@ -42,7 +51,6 @@ string IpAddress::toString() {
 	}
 	return s;
 }
-
 
 IpAddress::~IpAddress() {
 	// TODO Auto-generated destructor stub
