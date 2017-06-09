@@ -134,9 +134,10 @@ void UdpRelay::handleTcpRequest(int clntSocket)
     while ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) > 0) {
     	echoBuffer[recvMsgSize] = '\0';
     	BroadcastPacket receivedPacket(echoBuffer);
-    	cout << "UdpRelay: received " << dec << recvMsgSize << "bytes, message: " << echoBuffer << endl;
+    	cout << "UdpRelay: received " << dec << recvMsgSize << " bytes, message: " << receivedPacket.getMessage() << endl;
 
     	if (!receivedPacket.containsIp(localhostIP)) {
+    		cout << "UdpRelay: broadcast buf [" << recvMsgSize - 1 << " bytes] to " << groupIP << ":" << groupUdpPort << endl;
     		thread relayOutThread(&UdpRelay::relayOutRunnable, this, echoBuffer);
     		relayOutThread.join();
     	} else {
@@ -187,9 +188,7 @@ void UdpRelay::relayInRunnable () {
     char echoBuffer[RCVBUFSIZE];
     while (true) {
         int lengthReceived = ptrUdpMulticast->recv(echoBuffer, RCVBUFSIZE);
-
         echoBuffer[lengthReceived] = '\0';
-        cout << "UdpRelay: received " << lengthReceived << " bytes, msg : " << echoBuffer << endl;
 
         // deserialize to get a BroadcastPacket
     	BroadcastPacket receivedPacket(echoBuffer);
