@@ -68,7 +68,6 @@ void UdpRelay::commandRunnable () {
 	string commandLine = "";
 	while (true) {
 		cin >> commandLine;
-		cout << "command line: " << commandLine << endl;
 		if (commandLine.compare("quit") == 0) {
 			break;
 		} else if (commandLine.compare("help") == 0) {
@@ -150,7 +149,6 @@ void UdpRelay::handleTcpRequest(int clntSocket)
  * add a new host that relay UDP message to.
  */
 void UdpRelay::addRelayNode (string ipAddr, int port) {
-	cout << "addRelayNode (" << ipAddr << ", " << port << ")" << endl;
 	deleteConnection(ipAddr);
 
 	IpPortPair ipPort(ipAddr, port);
